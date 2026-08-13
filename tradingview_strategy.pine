@@ -1,0 +1,35 @@
+//@version=5
+strategy("Institutional Webhook Trigger Engine", overlay=true, initial_capital=100000)
+
+// --- Webhook Configuration Inputs ---
+secretKey = input.string("MySuperSecretKey123", title="Webhook Secret Key")
+indexName = input.string("NIFTY", title="Index Name (NIFTY / BANKNIFTY)")
+optType = input.string("CE", title="Option Type (CE / PE)")
+strikeOffset = input.string("ATM", title="Strike Offset (ITM1 / ATM / OTM1)")
+
+// --- Indicators ---
+// Fast & Slow EMAs
+fastEMA = ta.ema(close, 9)
+slowEMA = ta.ema(close, 21)
+
+// --- Buy / Exit Conditions ---
+longCondition = ta.crossover(fastEMA, slowEMA)
+exitCondition = ta.crossunder(fastEMA, slowEMA)
+
+// --- JSON Payload Generation ---
+// Matches the WebhookPayload interface expected by our Node.js bridge.
+buyPayload = '{"secret_key": "' + secretKey + '", "action": "BUY", "symbol": "' + syminfo.ticker + '", "index_name": "' + indexName + '", "spot_price": ' + str.tostring(close) + ', "option_type": "' + optType + '", "strike_offset": "' + strikeOffset + '"}'
+
+exitPayload = '{"secret_key": "' + secretKey + '", "action": "EXIT", "symbol": "' + syminfo.ticker + '", "index_name": "' + indexName + '", "spot_price": ' + str.tostring(close) + ', "option_type": "' + optType + '", "strike_offset": "' + strikeOffset + '"}'
+
+// --- Strategy Execution ---
+if (longCondition)
+    strategy.entry("Call_Entry", strategy.long, alert_message=buyPayload)
+
+if (exitCondition)
+    strategy.close("Call_Entry", alert_message=exitPayload)
+
+// --- INSTRUCTIONS FOR TRADINGVIEW ALERT ---
+// 1. Create a new alert on this strategy.
+// 2. In the "Message" box, type EXACTLY: {{strategy.order.alert_message}}
+// 3. Enable "Webhook URL" and paste your server address (e.g., http://YOUR_SERVER_IP:5000/api/v1/webhook)

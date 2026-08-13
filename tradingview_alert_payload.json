@@ -1,0 +1,12 @@
+{
+  "secret_key": "MySuperSecretKey123",
+  "action": "{{strategy.order.action}}",
+  "symbol": "{{ticker}}",
+  "index_name": "NIFTY",
+  "spot_price": {{close}},
+  "option_type": "CE",
+  "strike_offset": "ITM1",
+  "stop_loss": {{plot("SL")}},
+  "target": {{plot("TP")}},
+  "timestamp": "{{timenow}}"
+}
